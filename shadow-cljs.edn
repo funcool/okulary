@@ -1,0 +1,22 @@
+{:deps {:aliases [:dev]}
+ :dev-http {9000 "classpath:public"}
+ :http {:port 9001}
+
+ :builds
+ {:main
+  {:target :browser
+   :output-dir "target/public/js/"
+   :asset-path "/js"
+   :modules {:main {:entries [cljs.user]}}
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false}
+   :release
+   {:output-dir "target/public/js"
+    :compiler-options
+    {:fn-invoke-direct true
+     ;; :pseudo-names true
+     ;; :pretty-print true
+     :source-map true
+     :anon-fn-naming-policy :mapped
+     :source-map-detail-level :all}}}}}

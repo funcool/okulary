@@ -1,0 +1,19 @@
+{:deps {}
+ :paths ["src"]
+ :aliases
+ {:dev
+  {:extra-paths ["test" "target" "dev"]
+   :extra-deps
+   {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+    com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+    funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
+    org.clojure/clojurescript {:mvn/version "1.10.597"}
+    org.clojure/clojure {:mvn/version "1.10.1"}
+    thheller/shadow-cljs {:mvn/version "2.8.93"}}}
+
+  :repl
+  {:main-opts  ["-m" "rebel-readline.main"]}
+
+  :jar
+  {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "hf.depstar.jar" "target/okulary.jar"]}}}
