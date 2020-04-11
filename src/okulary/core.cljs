@@ -1,5 +1,5 @@
 (ns okulary.core
-  (:refer-clojure :exclude [key ->Atom atom derive]))
+  (:refer-clojure :exclude [key ->Atom Atom atom derive]))
 
 (defn key
   "A key based selector."
@@ -10,7 +10,7 @@
   [kv]
   (fn [v] (get-in v kv)))
 
-(deftype FastAtom [state watches]
+(deftype Atom [state watches]
   Object
   (equiv [self other]
     (-equiv self other))
@@ -21,9 +21,6 @@
 
   IDeref
   (-deref [_] state)
-
-  IMeta
-  (-meta [_] nil)
 
   IReset
   (-reset! [self newval]
@@ -50,7 +47,7 @@
       (when-not ^boolean (.-done nx)
         (let [f (aget (.-value nx) 1)
               k (aget (.-value nx) 0)]
-          (^js f k self oldval newval)
+          (f k self oldval newval)
           (recur it (.next it))))))
 
   (-add-watch [self key f]
@@ -66,15 +63,9 @@
 (defn atom
   "Creates and returns an Atom with an initial value of x."
   [x]
-  (FastAtom. x (js/Map.)))
+  (Atom. x (js/Map.)))
 
-(deftype DerivedAtom [id
-                      selector
-                      source
-                      equals?
-                      watchers
-                      srccache
-                      cache]
+(deftype DerivedAtom [id selector source equals? watchers srccache cache]
   IAtom
   IDeref
   (-deref [self]
@@ -94,7 +85,7 @@
                  (fn [_ _ oldv newv]
                    (when-not (identical? oldv newv)
                      (let [new' (selector newv)
-                           old' (js* "~{} || ~{}" (.-cache self)  (^js selector oldv))]
+                           old' (js* "~{} || ~{}" (.-cache self)  (selector oldv))]
                        (set! (.-srccache self) newv)
                        (set! (.-cache self) new')
                        (when-not ^boolean (equals? old' new')
@@ -103,7 +94,7 @@
                            (when-not ^boolean (.-done nx)
                              (let [f (aget (.-value nx) 1)
                                    k (aget (.-value nx) 0)]
-                               (^js f k self old' new')
+                               (f k self old' new')
                                (recur it (.next it)))))))))))
     self)
 
@@ -113,7 +104,7 @@
       (remove-watch source id)
       (set! (.-cache self) nil))))
 
-(defn derive
+(defn derived
   "Create a derived atom from an other atom with the provided lense.
 
   The returned atom is lazy, so no code is executed until user
@@ -126,7 +117,7 @@
   you want value comparison instead of reference comparison with
   `identical?`."
   ([selector source]
-   (derive selector source nil))
-  ([selector source {:keys [equals?] :or {equals? identical?}}]
+   (derived selector source identical?))
+  ([selector source equals?]
    (DerivedAtom. (js/Symbol "lentes") selector source equals? (js/Map.)
                  (js/Symbol "empty") nil)))

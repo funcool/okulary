@@ -3,7 +3,12 @@
  :http {:port 9001}
 
  :builds
- {:main
+ {:test
+  {:target :node-test
+   :output-to "target/tests.js"
+   :autorun true}
+
+  :main
   {:target :browser
    :output-dir "target/public/js/"
    :asset-path "/js"
