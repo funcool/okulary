@@ -85,7 +85,7 @@
                  (fn [_ _ oldv newv]
                    (when-not (identical? oldv newv)
                      (let [new' (selector newv)
-                           old' (js* "~{} || ~{}" (.-cache self)  (selector oldv))]
+                           old' (selector oldv)]
                        (set! (.-srccache self) newv)
                        (set! (.-cache self) new')
                        (when-not ^boolean (equals? old' new')
@@ -119,5 +119,5 @@
   ([selector source]
    (derived selector source identical?))
   ([selector source equals?]
-   (DerivedAtom. (js/Symbol "lentes") selector source equals? (js/Map.)
+   (DerivedAtom. (js/Symbol "okulary") selector source equals? (js/Map.)
                  (js/Symbol "empty") nil)))
