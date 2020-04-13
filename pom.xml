@@ -4,7 +4,7 @@
   <groupId>funcool</groupId>
   <artifactId>okulary</artifactId>
   <packaging>jar</packaging>
-  <version>2020.04.13-0</version>
+  <version>2020.04.13-2</version>
   <name>okulary</name>
   <description>Fast Atom and DerivedAtom impl for ClojureScript.</description>
   <url>https://github.com/funcool/okulary</url>

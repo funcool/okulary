@@ -65,12 +65,15 @@
   [x]
   (Atom. x (js/Map.)))
 
+(def EMPTY (js/Symbol "empty"))
+
 (deftype DerivedAtom [id selector source equals? watchers srccache cache]
   IAtom
   IDeref
   (-deref [self]
     (let [source (deref source)]
-      (if (identical? (.-srccache self) source)
+      (if (and (not (identical? cache EMPTY))
+               (identical? srccache source))
         (.-cache self)
         (let [result (selector source)]
           (set! (.-srccache self) source)
@@ -102,7 +105,7 @@
     (.delete watchers key)
     (when (identical? (.-size watchers) 0)
       (remove-watch source id)
-      (set! (.-cache self) nil))))
+      (set! (.-cache self) EMPTY))))
 
 (defn derived
   "Create a derived atom from an other atom with the provided lense.
@@ -120,4 +123,4 @@
    (derived selector source identical?))
   ([selector source equals?]
    (DerivedAtom. (js/Symbol "okulary") selector source equals? (js/Map.)
-                 (js/Symbol "empty") nil)))
+                 EMPTY EMPTY)))
