@@ -1,5 +1,11 @@
 # Changelog #
 
+## 2020.04.14-0
+
+- Use defensive copy of iterators (prevents infinite loops when
+  dispatching a watcher adds an other watcher).
+
+
 ## 2020.04.13-0
 
 - Bugfixes.

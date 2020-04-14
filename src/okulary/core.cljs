@@ -42,13 +42,15 @@
 
   IWatchable
   (-notify-watches [self oldval newval]
-    (loop [it (.entries watches)
-           nx (.next it)]
-      (when-not ^boolean (.-done nx)
-        (let [f (aget (.-value nx) 1)
-              k (aget (.-value nx) 0)]
-          (f k self oldval newval)
-          (recur it (.next it))))))
+    (let [a (js/Array.from (.entries watches))
+          t (alength a)]
+      (loop [i 0]
+        (when (< i t)
+          (let [nx (aget a i)
+                f (aget nx 1)
+                k (aget nx 0)]
+            (f k self oldval newval)
+            (recur (inc i)))))))
 
   (-add-watch [self key f]
     (.set watches key f)
@@ -92,13 +94,15 @@
                        (set! (.-srccache self) newv)
                        (set! (.-cache self) new')
                        (when-not ^boolean (equals? old' new')
-                         (loop [it (.entries watchers)
-                                nx (.next it)]
-                           (when-not ^boolean (.-done nx)
-                             (let [f (aget (.-value nx) 1)
-                                   k (aget (.-value nx) 0)]
-                               (f k self old' new')
-                               (recur it (.next it)))))))))))
+                         (let [a (js/Array.from (.entries watchers))
+                               t (alength a)]
+                           (loop [i 0]
+                             (when (< i t)
+                               (let [nx (aget a i)
+                                     f (aget nx 1)
+                                     k (aget nx 0)]
+                                 (f k self old' new')
+                                 (recur (inc i))))))))))))
     self)
 
   (-remove-watch [self key]
