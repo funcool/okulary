@@ -6,14 +6,23 @@
    :extra-deps
    {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
     com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+    thheller/shadow-cljs {:mvn/version "2.17.8"}
     funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
-    org.clojure/clojurescript {:mvn/version "1.10.597"}
-    org.clojure/clojure {:mvn/version "1.10.1"}
-    thheller/shadow-cljs {:mvn/version "2.8.93"}}}
+    org.clojure/clojurescript {:mvn/version "1.11.4"}
+    org.clojure/clojure {:mvn/version "1.11.0"}}}
 
   :repl
   {:main-opts  ["-m" "rebel-readline.main"]}
 
-  :jar
-  {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
-   :main-opts ["-m" "hf.depstar.jar" "target/okulary.jar"]}}}
+  :shadow-cljs
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
+
+  :outdated
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
+                org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "antq.core"]}
+
+  :build
+  {:extra-deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+   :ns-default build}}}
+
