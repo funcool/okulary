@@ -15,11 +15,16 @@
    :modules {:main {:entries [cljs.user]}}
    :compiler-options
    {:output-feature-set :es8
-    :output-wrapper false}
+    :output-wrapper false
+    ;; :static-fns true
+    ;; :fn-invoke-direct true
+    }
+
    :release
    {:output-dir "target/public/js"
     :compiler-options
     {:fn-invoke-direct true
+     :static-fns true
      ;; :pseudo-names true
      ;; :pretty-print true
      :source-map true

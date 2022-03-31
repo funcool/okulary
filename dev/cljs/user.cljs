@@ -1,6 +1,8 @@
 (ns cljs.user
-  (:require [okulary.core :as ok]
-            [lentes.core :as l]))
+  (:require
+   [okulary.core :as ok]
+   [okulary.util :as ou]
+   [lentes.core :as l]))
 
 
 ;; --- Lentes & Default Atom
@@ -63,16 +65,33 @@
     (swap! a update :b inc)
     10000))
 
-(def a (ok/atom {:a 1 :b 1}))
-(def b (ok/derived :a a))
-(def c (ok/derived :b a))
+(def x1 (ok/atom {:a 1 :b {:c 2 :d 3}}))
 
-(add-watch b :foobar #(js/console.log "watch: :a" %3 "=>" %4))
-(add-watch c :foobar #(js/console.log "watch: :b" %3 "=>" %4))
+(def x2 (ok/derived
+         (fn [v]
+           (prn "getter x2")
+           (get v :a))
+         x1))
+
+(def x3 (ok/derived
+         (fn [v]
+           (prn "getter x3")
+           (get v :b))
+         x1))
+
+(def x4 (ok/derived
+         (fn [v]
+           (prn "getter x4")
+           (get v :d))
+         x3))
+
+(add-watch x2 :foobar #(js/console.log "watch: x2" %3 "=>" %4))
+(add-watch x3 :foobar #(js/console.log "watch: x3" %3 "=>" %4))
+(add-watch x4 :foobar #(js/console.log "watch: x4" %3 "=>" %4))
 
 (defn ^:export test-swap
   []
-  (swap! a update :a inc))
+  (swap! x1 update-in [:b :d] inc))
 
 ;; --- Other
 
@@ -104,4 +123,3 @@
     [a (prepare-fast-atom)]
     (swap! a inc)
     10000))
-

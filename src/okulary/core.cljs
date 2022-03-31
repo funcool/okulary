@@ -1,5 +1,6 @@
 (ns okulary.core
-  (:refer-clojure :exclude [key ->Atom Atom atom derive]))
+  (:refer-clojure :exclude [key ->Atom Atom atom derive])
+  (:require [okulary.util :as ou]))
 
 (defn key
   "A key based selector."
@@ -42,15 +43,12 @@
 
   IWatchable
   (-notify-watches [self oldval newval]
-    (let [a (js/Array.from (.entries watches))
-          t (alength a)]
-      (loop [i 0]
-        (when (< i t)
-          (let [nx (aget a i)
-                f (aget nx 1)
-                k (aget nx 0)]
-            (f k self oldval newval)
-            (recur (inc i)))))))
+    (ou/doiter
+     (.entries watches)
+     (fn [n]
+       (let [f (aget n 1)
+             k (aget n 0)]
+         (f k self oldval newval)))))
 
   (-add-watch [self key f]
     (.set watches key f)
@@ -67,7 +65,7 @@
   [x]
   (Atom. x (js/Map.)))
 
-(def EMPTY (js/Symbol "empty"))
+(def ^:private EMPTY (js/Symbol "empty"))
 
 (deftype DerivedAtom [id selector source equals? watchers srccache cache]
   IAtom
@@ -85,29 +83,45 @@
   IWatchable
   (-add-watch [self key cb]
     (.set watchers key cb)
-    (when (identical? (.-size watchers) 1)
+    (when (= (.-size watchers) 1)
       (add-watch source id
-                 (fn [_ _ oldv newv]
-                   (when-not (identical? oldv newv)
-                     (let [new' (selector newv)
-                           old' (selector oldv)]
-                       (set! (.-srccache self) newv)
-                       (set! (.-cache self) new')
-                       (when-not ^boolean (equals? old' new')
-                         (let [a (js/Array.from (.entries watchers))
-                               t (alength a)]
-                           (loop [i 0]
-                             (when (< i t)
-                               (let [nx (aget a i)
-                                     f (aget nx 1)
-                                     k (aget nx 0)]
-                                 (f k self old' new')
-                                 (recur (inc i))))))))))))
+                 (fn [_ _ old-source-value new-source-value]
+                   (when-not (identical? old-source-value new-source-value)
+                     (let [;; As first step we apply the selector to
+                           ;; the new source value.
+                           new-value  (selector new-source-value)
+
+                           ;; Retrieve the cached value, if it is
+                           ;; empty, execute the selector for the old
+                           ;; value.
+                           old-cached (.-cache self)
+                           old-value  (if (identical? old-cached EMPTY)
+                                        (selector old-source-value)
+                                        old-cached)]
+
+                       ;; Store the new source value in the instance;
+                       ;; this is mainly used by the deref, so this is
+                       ;; just a small performance improvement for it.
+                       (set! (.-srccache self) new-source-value)
+
+                       ;; Cache the new value in the instance.
+                       (set! (.-cache self) new-value)
+
+                       ;; Then proceed to check if the new value and
+                       ;; the old value are equals using user provided
+                       ;; equals function.
+                       (when-not ^boolean (equals? new-value old-value)
+                         ;; Iterate over all watchers and run them
+                         (ou/doiter (.entries watchers)
+                                    (fn [n]
+                                      (let [f (aget n 1)
+                                            k (aget n 0)]
+                                        (f k self old-value new-value))))))))))
     self)
 
   (-remove-watch [self key]
     (.delete watchers key)
-    (when (identical? (.-size watchers) 0)
+    (when (= (.-size watchers) 0)
       (remove-watch source id)
       (set! (.-cache self) EMPTY))))
 
@@ -126,5 +140,4 @@
   ([selector source]
    (derived selector source identical?))
   ([selector source equals?]
-   (DerivedAtom. (js/Symbol "okulary") selector source equals? (js/Map.)
-                 EMPTY EMPTY)))
+   (DerivedAtom. (js/Symbol "okulary") selector source equals? (js/Map.) EMPTY EMPTY)))
