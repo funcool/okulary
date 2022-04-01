@@ -1,5 +1,10 @@
 # Changelog #
 
+## 2022.04.01-10
+
+- Performance enhacements
+
+
 ## 2020.04.14-0
 
 - Use defensive copy of iterators (prevents infinite loops when
