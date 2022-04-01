@@ -67,50 +67,65 @@
 
 (def ^:private EMPTY (js/Symbol "empty"))
 
-(deftype DerivedAtom [id selector source equals? watchers srccache cache]
+(deftype DerivedAtom [id selector source equals? watchers ^:mutable srccache ^:mutable cache]
   IAtom
   IDeref
   (-deref [self]
     (let [source (deref source)]
-      (if (and (not (identical? cache EMPTY))
-               (identical? srccache source))
-        (.-cache self)
-        (let [result (selector source)]
-          (set! (.-srccache self) source)
-          (set! (.-cache self) result)
+      (if (and (identical? srccache source)
+               (not (identical? cache EMPTY)))
+        cache
+        (let [selector-fn selector
+              result      (selector-fn source)]
+          (set! srccache source)
+          (set! cache result)
           result))))
 
   IWatchable
   (-add-watch [self key cb]
     (.set watchers key cb)
+
+    ;; Only if we have the size of 1 (the first one), we attach a
+    ;; watcher to the parent; all the following, will reuse the same
+    ;; watcher.
     (when (= (.-size watchers) 1)
+
+      ;; We reset the cache for avoid a strange case when a loss of
+      ;; warcher call can happen.
+      (set! cache EMPTY)
+
       (add-watch source id
                  (fn [_ _ old-source-value new-source-value]
                    (when-not (identical? old-source-value new-source-value)
-                     (let [;; As first step we apply the selector to
+                     (let [;; set local-variables for avoid repeated
+                           ;; object property lookup.
+                           equals-fn   equals?
+                           selector-fn selector
+
+                           ;; As first step we apply the selector to
                            ;; the new source value.
-                           new-value  (selector new-source-value)
+                           new-value   (selector-fn new-source-value)
 
                            ;; Retrieve the cached value, if it is
                            ;; empty, execute the selector for the old
                            ;; value.
-                           old-cached (.-cache self)
-                           old-value  (if (identical? old-cached EMPTY)
-                                        (selector old-source-value)
-                                        old-cached)]
+                           old-cached  cache
+                           old-value   (if (identical? old-cached EMPTY)
+                                         (selector-fn old-source-value)
+                                         old-cached)]
 
                        ;; Store the new source value in the instance;
                        ;; this is mainly used by the deref, so this is
                        ;; just a small performance improvement for it.
-                       (set! (.-srccache self) new-source-value)
+                       (set! srccache new-source-value)
 
                        ;; Cache the new value in the instance.
-                       (set! (.-cache self) new-value)
+                       (set! cache new-value)
 
                        ;; Then proceed to check if the new value and
                        ;; the old value are equals using user provided
                        ;; equals function.
-                       (when-not ^boolean (equals? new-value old-value)
+                       (when-not ^boolean (equals-fn new-value old-value)
                          ;; Iterate over all watchers and run them
                          (ou/doiter (.entries watchers)
                                     (fn [n]
@@ -122,8 +137,8 @@
   (-remove-watch [self key]
     (.delete watchers key)
     (when (= (.-size watchers) 0)
-      (remove-watch source id)
-      (set! (.-cache self) EMPTY))))
+      (remove-watch source id))
+    self))
 
 (defn derived
   "Create a derived atom from an other atom with the provided lense.
