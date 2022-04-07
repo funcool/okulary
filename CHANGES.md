@@ -1,5 +1,10 @@
 # Changelog #
 
+## 2022.04.07-12
+
+- Schedule change notifications as microtasks.
+
+
 ## 2022.04.01-10
 
 - Performance enhacements
