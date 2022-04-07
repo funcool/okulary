@@ -48,7 +48,7 @@
      (fn [n]
        (let [f (aget n 1)
              k (aget n 0)]
-         (f k self oldval newval)))))
+         (js/queueMicrotask #(f k self oldval newval))))))
 
   (-add-watch [self key f]
     (.set watches key f)
@@ -67,7 +67,7 @@
 
 (def ^:private EMPTY (js/Symbol "empty"))
 
-(deftype DerivedAtom [id selector source equals? watchers ^:mutable srccache ^:mutable cache]
+(deftype DerivedAtom [id selector source equals? watches ^:mutable srccache ^:mutable cache]
   IAtom
   IDeref
   (-deref [self]
@@ -83,12 +83,12 @@
 
   IWatchable
   (-add-watch [self key cb]
-    (.set watchers key cb)
+    (.set watches key cb)
 
     ;; Only if we have the size of 1 (the first one), we attach a
     ;; watcher to the parent; all the following, will reuse the same
     ;; watcher.
-    (when (= (.-size watchers) 1)
+    (when (= (.-size watches) 1)
 
       ;; We reset the cache for avoid a strange case when a loss of
       ;; warcher call can happen.
@@ -126,17 +126,17 @@
                        ;; the old value are equals using user provided
                        ;; equals function.
                        (when-not ^boolean (equals-fn new-value old-value)
-                         ;; Iterate over all watchers and run them
-                         (ou/doiter (.entries watchers)
+                         ;; Iterate over all watches and run them
+                         (ou/doiter (.entries watches)
                                     (fn [n]
                                       (let [f (aget n 1)
                                             k (aget n 0)]
-                                        (f k self old-value new-value))))))))))
+                                        (js/queueMicrotask #(f k self old-value new-value)))))))))))
     self)
 
   (-remove-watch [self key]
-    (.delete watchers key)
-    (when (= (.-size watchers) 0)
+    (.delete watches key)
+    (when (= (.-size watches) 0)
       (remove-watch source id))
     self))
 
