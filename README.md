@@ -3,7 +3,7 @@
 A faster Atom and DerivedAtom impl for clojurescript.
 
 ```clojure
-{:deps {funcool/okulary {:mvn/version "2022.04.07-12"}}}
+{:deps {funcool/okulary {:mvn/version "2022.04.11-16"}}}
 ```
 
 

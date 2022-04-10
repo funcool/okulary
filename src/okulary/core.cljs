@@ -144,3 +144,4 @@
    (derived selector source identical?))
   ([selector source equals?]
    (DerivedAtom. (js/Symbol "okulary") selector source equals? (js/Map.) EMPTY EMPTY)))
+

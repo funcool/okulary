@@ -1,5 +1,10 @@
 # Changelog #
 
+## 2022.04.11-16
+
+- Rollback some internal cache usage because of race conditions
+
+
 ## 2022.04.07-12
 
 - Schedule change notifications as microtasks.
