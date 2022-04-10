@@ -48,7 +48,7 @@
      (fn [n]
        (let [f (aget n 1)
              k (aget n 0)]
-         (js/queueMicrotask #(f k self oldval newval))))))
+         (f k self oldval newval)))))
 
   (-add-watch [self key f]
     (.set watches key f)
@@ -89,11 +89,6 @@
     ;; watcher to the parent; all the following, will reuse the same
     ;; watcher.
     (when (= (.-size watches) 1)
-
-      ;; We reset the cache for avoid a strange case when a loss of
-      ;; warcher call can happen.
-      (set! cache EMPTY)
-
       (add-watch source id
                  (fn [_ _ old-source-value new-source-value]
                    (when-not (identical? old-source-value new-source-value)
@@ -105,14 +100,7 @@
                            ;; As first step we apply the selector to
                            ;; the new source value.
                            new-value   (selector-fn new-source-value)
-
-                           ;; Retrieve the cached value, if it is
-                           ;; empty, execute the selector for the old
-                           ;; value.
-                           old-cached  cache
-                           old-value   (if (identical? old-cached EMPTY)
-                                         (selector-fn old-source-value)
-                                         old-cached)]
+                           old-value   (selector-fn old-source-value)]
 
                        ;; Store the new source value in the instance;
                        ;; this is mainly used by the deref, so this is
@@ -131,7 +119,7 @@
                                     (fn [n]
                                       (let [f (aget n 1)
                                             k (aget n 0)]
-                                        (js/queueMicrotask #(f k self old-value new-value)))))))))))
+                                        (f k self old-value new-value))))))))))
     self)
 
   (-remove-watch [self key]
